@@ -31,14 +31,13 @@ truthseeq/
 │   │   ├── api/
 │   │   │   ├── __init__.py
 │   │   │   ├── routes/
-│   │   │   │   ├── auth.py         # Authentication endpoints
 │   │   │   │   ├── content.py      # Content verification endpoints
 │   │   │   │   ├── feed.py         # Social feed endpoints
-│   │   │   │   └── users.py        # User management endpoints
+│   │   │   │   └── rate_limit.py   # Rate limiting endpoints
 │   │   │   └── dependencies.py     # FastAPI dependencies
 │   │   ├── core/
 │   │   │   ├── __init__.py
-│   │   │   ├── security.py         # JWT authentication
+│   │   │   ├── rate_limiting.py    # Rate limiting logic
 │   │   │   ├── exceptions.py       # Custom exceptions
 │   │   │   └── logging.py          # Logging configuration
 │   │   ├── services/
@@ -49,9 +48,9 @@ truthseeq/
 │   │   │   └── feed_service.py     # Social feed management
 │   │   └── schemas/
 │   │       ├── __init__.py
-│   │       ├── user.py             # Pydantic models
 │   │       ├── content.py
-│   │       └── feed.py
+│   │       ├── feed.py
+│   │       └── rate_limit.py
 │   ├── langgraph/
 │   │   ├── __init__.py
 │   │   ├── workflows/
@@ -88,8 +87,8 @@ truthseeq/
 - **Framework**: FastAPI (async, auto-documentation, high performance)
 - **Database**: PostgreSQL with SQLAlchemy ORM
 - **AI/ML**: LangGraph + LangChain for workflow orchestration
-- **Caching**: Redis for session management and caching
-- **Authentication**: JWT with refresh tokens
+- **Caching**: Redis for rate limiting and caching
+- **Rate Limiting**: IP-based and session-based rate limiting
 - **Web Scraping**: Integration with existing `advanced_scraper.py`
 - **Message Queue**: Celery + Redis for background tasks
 - **Monitoring**: Prometheus + Grafana
@@ -99,22 +98,21 @@ truthseeq/
 
 #### Core Tables
 ```sql
--- Users and Authentication
-users (id, email, username, password_hash, created_at, updated_at)
-user_sessions (id, user_id, token, expires_at, created_at)
+-- Rate Limiting and User Tracking
+user_sessions (id, session_id, ip_address, user_agent, created_at, last_activity, request_count)
+rate_limit_logs (id, session_id, endpoint, request_count, window_start, window_end)
 
 -- Content Management
 content_items (id, url, title, content, source_domain, scraped_at, status)
 content_metadata (id, content_id, metadata_type, metadata_value, created_at)
 
 -- Fact-Checking Results
-fact_check_results (id, content_id, user_id, confidence_score, verdict, reasoning, created_at)
+fact_check_results (id, content_id, session_id, confidence_score, verdict, reasoning, created_at)
 fact_check_sources (id, fact_check_id, source_url, source_type, relevance_score)
 
 -- Social Feed
-feed_posts (id, content_id, user_id, title, summary, verdict, confidence, created_at)
-feed_comments (id, post_id, user_id, content, created_at)
-feed_likes (id, post_id, user_id, created_at)
+feed_posts (id, content_id, session_id, title, summary, verdict, confidence, created_at)
+feed_likes (id, post_id, session_id, created_at)
 
 -- AI Analysis
 ai_analysis_results (id, content_id, analysis_type, result_data, confidence, created_at)
@@ -214,14 +212,18 @@ ContentExtraction → SourceVerification → FactAnalysis → ConfidenceScoring 
 
 ## 📋 Phase 4: API Development
 
-### 4.1 Authentication System
-**File**: `api/routes/auth.py`
+### 4.1 Rate Limiting System
+**File**: `api/routes/rate_limit.py`
 
 **Endpoints**:
-- `POST /auth/register` - User registration
-- `POST /auth/login` - User login
-- `POST /auth/refresh` - Token refresh
-- `POST /auth/logout` - User logout
+- `GET /rate-limit/status` - Get current rate limit status
+- `POST /rate-limit/reset` - Reset rate limit (admin only)
+
+**Rate Limiting Strategy**:
+- IP-based rate limiting for anonymous users
+- Session-based rate limiting for identified users
+- Different limits for different endpoints
+- Sliding window rate limiting with Redis
 
 ### 4.2 Content Verification API
 **File**: `api/routes/content.py`
@@ -229,7 +231,7 @@ ContentExtraction → SourceVerification → FactAnalysis → ConfidenceScoring 
 **Endpoints**:
 - `POST /content/verify` - Submit content for verification
 - `GET /content/{id}` - Get verification results
-- `GET /content/history` - User's verification history
+- `GET /content/history` - Session's verification history
 - `POST /content/batch-verify` - Batch verification
 
 ### 4.3 Social Feed API
@@ -239,17 +241,7 @@ ContentExtraction → SourceVerification → FactAnalysis → ConfidenceScoring 
 - `GET /feed` - Get social feed posts
 - `POST /feed/posts` - Create new feed post
 - `GET /feed/posts/{id}` - Get specific post
-- `POST /feed/posts/{id}/comments` - Add comment
 - `POST /feed/posts/{id}/like` - Like/unlike post
-
-### 4.4 User Management API
-**File**: `api/routes/users.py`
-
-**Endpoints**:
-- `GET /users/profile` - Get user profile
-- `PUT /users/profile` - Update profile
-- `GET /users/activity` - User activity history
-- `DELETE /users/account` - Delete account
 
 ## 📋 Phase 5: Background Services
 
@@ -261,16 +253,16 @@ ContentExtraction → SourceVerification → FactAnalysis → ConfidenceScoring 
 - AI analysis execution
 - Social feed updates
 - Database cleanup and maintenance
-- Email notifications
+- Rate limit cleanup
 
 ### 5.2 Caching Strategy
 **File**: `services/cache_service.py`
 
 **Caching Layers**:
-- Redis for session management
+- Redis for rate limiting
 - Content analysis results caching
 - API response caching
-- User preferences caching
+- Session data caching
 
 ## 📋 Phase 6: Data Management & Analytics
 
@@ -291,7 +283,7 @@ ContentExtraction → SourceVerification → FactAnalysis → ConfidenceScoring 
 ### 7.1 Security Measures
 - Input validation and sanitization
 - Rate limiting and DDoS protection
-- API key management
+- IP-based abuse prevention
 - Data encryption at rest and in transit
 - Audit logging
 
@@ -343,7 +335,7 @@ ContentExtraction → SourceVerification → FactAnalysis → ConfidenceScoring 
 - Project structure setup
 - Database schema design and implementation
 - Basic FastAPI application setup
-- Authentication system
+- Rate limiting system
 
 ### Week 3-4: Core Services
 - Scraper service integration
@@ -360,7 +352,7 @@ ContentExtraction → SourceVerification → FactAnalysis → ConfidenceScoring 
 ### Week 7-8: Social Features
 - Social feed implementation
 - User interaction features
-- Content sharing and commenting
+- Content sharing and liking
 - Feed algorithms
 
 ### Week 9-10: Background Services
@@ -440,7 +432,7 @@ uvicorn app.main:app --reload
    - Integrate advanced scraper
    - Implement basic LangGraph workflow
    - Create core API endpoints
-   - Set up authentication system
+   - Set up rate limiting system
 
 3. **Long-term Vision**:
    - Advanced AI models integration

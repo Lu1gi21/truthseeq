@@ -1,0 +1,176 @@
+# ========================================
+# TruthSeeQ Backend Dependencies
+# ========================================
+# Generated based on PLAN.MD requirements
+# Last updated: 2025
+
+# ========================================
+# Core Web Framework
+# ========================================
+fastapi[standard]==0.116.1        # High-performance async web framework with auto docs
+uvicorn[standard]==0.35.0          # ASGI server for production
+gunicorn==22.0.0                   # Python WSGI HTTP Server for Unix
+python-multipart==0.0.18          # For file uploads and form data
+
+# ========================================
+# Database & ORM
+# ========================================
+sqlalchemy==2.0.41                # SQL toolkit and Object-Relational Mapping
+alembic==1.16.1                   # Database migration tool for SQLAlchemy
+asyncpg==0.30.0                   # Fast PostgreSQL adapter for asyncio
+psycopg2-binary==2.9.10           # PostgreSQL adapter (binary distribution)
+
+# ========================================
+# AI/ML & LangChain Ecosystem
+# ========================================
+langgraph==0.3.28                 # LangGraph-based workflow orchestration
+langchain==0.3.18                 # LangChain framework for LLM applications
+langchain-community==0.3.17       # Community integrations for LangChain
+langchain-core==0.3.28            # Core LangChain abstractions
+langchain-openai==0.2.15          # OpenAI integrations for LangChain
+langchain-anthropic==0.2.10       # Anthropic integrations for LangChain
+openai==1.59.3                    # OpenAI API client
+anthropic==0.41.0                 # Anthropic Claude API client
+
+# ========================================
+# Caching & Message Queue
+# ========================================
+redis==5.2.1                      # Redis client for caching and rate limiting
+celery[redis]==5.4.0              # Distributed task queue
+kombu==5.4.2                      # Messaging library for Celery
+
+# ========================================
+# Web Scraping & Content Processing
+# ========================================
+requests==2.33.0                  # HTTP library for web scraping
+httpx==0.28.1                     # Async HTTP client
+beautifulsoup4==4.12.3            # HTML/XML parser for web scraping
+lxml==5.3.0                       # XML and HTML processing library
+newspaper3k==0.2.8                # Article extraction and curation
+readability-lxml==0.8.1           # Content extraction from web pages
+trafilatura==1.12.2               # Advanced content extraction from web pages
+selenium==4.27.1                  # Web browser automation
+undetected-chromedriver==3.5.5    # Undetected Chrome driver for Selenium
+webdriver-manager==4.0.2          # Automatic WebDriver management
+python-dateutil==2.9.0.post0     # Date parsing utilities
+chardet==5.2.0                    # Character encoding detection
+
+# ========================================
+# Search APIs & Content Discovery
+# ========================================
+brave-search-python-client==0.4.27  # Brave Search API client
+brave-search==0.2.0               # Alternative Brave Search client
+
+# ========================================
+# Text Processing & Analysis
+# ========================================
+nltk==3.9.1                       # Natural Language Toolkit
+textdistance==4.6.3               # Text similarity algorithms
+python-levenshtein==0.26.0        # Fast string distance calculations
+scikit-learn==1.6.0               # Machine learning library for text analysis
+sentence-transformers==3.3.1      # Sentence embeddings for semantic similarity
+transformers==4.47.1              # Transformer models for NLP
+
+# ========================================
+# Data Validation & Serialization
+# ========================================
+pydantic==2.10.4                  # Data validation using Python type annotations
+pydantic-settings==2.7.0          # Settings management with Pydantic
+email-validator==2.2.0            # Email validation for Pydantic
+
+# ========================================
+# Security & Authentication
+# ========================================
+passlib[bcrypt]==1.7.4            # Password hashing library
+python-jose[cryptography]==3.3.0  # JWT token handling
+bcrypt==4.2.1                     # Modern password hashing
+cryptography==44.0.0              # Cryptographic recipes and primitives
+
+# ========================================
+# Configuration & Environment
+# ========================================
+python-dotenv==1.0.1              # Load environment variables from .env file
+pyyaml==6.0.2                     # YAML parser and emitter
+toml==0.10.2                      # TOML parser
+
+# ========================================
+# Logging & Monitoring
+# ========================================
+structlog==24.5.0                 # Structured logging
+loguru==0.7.3                     # Modern logging library
+prometheus-client==0.21.1         # Prometheus metrics client
+opentelemetry-api==1.29.0         # OpenTelemetry API for observability
+opentelemetry-sdk==1.29.0         # OpenTelemetry SDK
+
+# ========================================
+# Testing & Development
+# ========================================
+pytest==8.3.4                     # Testing framework
+pytest-asyncio==0.25.0            # Async support for pytest
+pytest-cov==6.0.0                 # Coverage plugin for pytest
+pytest-mock==3.14.0               # Mock plugin for pytest
+httpx==0.28.1                     # HTTP client for testing APIs
+factory-boy==3.3.1                # Test data generation
+faker==33.1.0                     # Fake data generation
+
+# ========================================
+# Code Quality & Formatting
+# ========================================
+black==24.10.0                    # Code formatter
+ruff==0.8.8                       # Fast Python linter and formatter
+mypy==1.14.0                      # Static type checker
+pre-commit==4.0.1                 # Git hooks framework
+
+# ========================================
+# Data Processing & Analytics
+# ========================================
+pandas==2.2.3                     # Data manipulation and analysis
+numpy==2.2.1                      # Numerical computing
+matplotlib==3.10.0                # Plotting library
+seaborn==0.13.2                   # Statistical data visualization
+
+# ========================================
+# File Processing
+# ========================================
+pillow==11.1.0                    # Image processing library
+python-magic==0.4.27              # File type detection
+aiofiles==24.1.0                  # Async file operations
+
+# ========================================
+# Utilities
+# ========================================
+click==8.1.8                      # Command line interface creation kit
+rich==13.9.5                      # Rich text and beautiful formatting
+tqdm==4.67.1                      # Progress bars
+tenacity==9.0.0                   # Retry library
+schedule==1.2.2                   # Job scheduling library
+
+# ========================================
+# API Documentation
+# ========================================
+# FastAPI includes automatic OpenAPI/Swagger docs
+# Additional documentation tools if needed:
+mkdocs==1.6.1                     # Documentation generator
+mkdocs-material==9.5.51           # Material theme for MkDocs
+
+# ========================================
+# Rate Limiting & Security
+# ========================================
+slowapi==0.1.9                    # Rate limiting for FastAPI
+python-multipart==0.0.18          # Multipart form data parsing
+
+# ========================================
+# Vector Database & Embeddings
+# ========================================
+# These will be added based on specific AI service requirements
+# chromadb==0.4.18                # Vector database for embeddings
+# pinecone-client==3.0.3          # Pinecone vector database client
+# weaviate-client==4.4.1          # Weaviate vector database client
+
+# ========================================
+# Development Dependencies (optional)
+# ========================================
+# These can be installed separately in development environments
+# jupyter==1.1.1                  # Jupyter notebooks for development
+# ipython==8.28.0                 # Enhanced Python shell
+# notebook==7.3.0                 # Jupyter notebook server
