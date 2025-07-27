@@ -24,7 +24,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from .api.routes import content, feed, rate_limit
+from .api.routes import content, feed, rate_limit, workflow
 from .config import settings
 from .core.exceptions import (
     ContentNotFoundError,
@@ -32,7 +32,7 @@ from .core.exceptions import (
     RateLimitExceededError
 )
 from .core.logging import configure_logging
-from .database.database import init_db, close_db
+from .database.database import init_database, db_manager
 
 # Configure logging
 configure_logging()
@@ -59,7 +59,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     
     try:
         # Initialize database
-        await init_db()
+        await init_database()
         logger.info("Database initialization completed")
         
         # Log configuration
@@ -78,7 +78,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         
         try:
             # Close database connections
-            await close_db()
+            await db_manager.close()
             logger.info("Database connections closed")
             
         except Exception as e:
@@ -222,6 +222,12 @@ app.include_router(
     tags=["rate-limit"]
 )
 
+app.include_router(
+    workflow.router,
+    prefix=settings.API_V1_STR,
+    tags=["workflow"]
+)
+
 
 # ========================================
 # Root and Health Check Endpoints
@@ -248,6 +254,8 @@ async def root():
             "brave_search_integration",
             "content_analysis",
             "fact_checking",
+            "source_verification",
+            "workflow_orchestration",
             "social_feed",
             "rate_limiting"
         ]

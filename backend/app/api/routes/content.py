@@ -31,7 +31,7 @@ from ...core.exceptions import (
     ValidationError,
     RateLimitExceededError
 )
-from ...database.database import get_async_session
+from ...database.database import get_db
 from ...database.models import ContentItem, ContentMetadata, UserSession
 from ...schemas.content import (
     ScrapingRequest,
@@ -58,7 +58,7 @@ router = APIRouter(prefix="/content", tags=["content"])
 # Dependency Injection
 # ========================================
 
-async def get_scraper_service(db: AsyncSession = Depends(get_async_session)) -> ScraperService:
+async def get_scraper_service(db: AsyncSession = Depends(get_db)) -> ScraperService:
     """
     Get ScraperService instance with database session.
     
@@ -187,7 +187,7 @@ async def search_content(
 @router.get("/{content_id}", response_model=ContentItemResponse)
 async def get_content(
     content_id: int,
-    db: AsyncSession = Depends(get_async_session),
+    db: AsyncSession = Depends(get_db),
     current_session: Optional[UserSession] = Depends(get_current_session)
 ):
     """
@@ -236,7 +236,7 @@ async def list_content(
     limit: int = Query(50, ge=1, le=100, description="Number of items to return"),
     domain: Optional[str] = Query(None, description="Filter by source domain"),
     status: Optional[str] = Query(None, description="Filter by content status"),
-    db: AsyncSession = Depends(get_async_session),
+    db: AsyncSession = Depends(get_db),
     current_session: Optional[UserSession] = Depends(get_current_session)
 ):
     """

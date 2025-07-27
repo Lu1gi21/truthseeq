@@ -35,10 +35,7 @@ from sqlalchemy import select, and_, or_, func, text
 from sqlalchemy.orm import selectinload
 
 # Import the existing advanced scraper
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-from advanced_scraper import AdvancedScraper, ScrapingResult as AdvancedScrapingResult
+from ..advanced_scraper import AdvancedScraper, ScrapingResult as AdvancedScrapingResult
 
 from ..config import settings
 from ..database.models import (

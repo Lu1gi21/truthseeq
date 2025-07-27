@@ -78,19 +78,19 @@ class ModelManager:
         try:
             # Initialize OpenAI models if API key is available
             if settings.ai.OPENAI_API_KEY:
-                self.models["gpt-4"] = ChatOpenAI(
-                    model="gpt-4",
+                self.models["gpt-4.1mini"] = ChatOpenAI(
+                    model="gpt-4.1-mini",
                     temperature=0.1,
                     api_key=settings.ai.OPENAI_API_KEY,
                     max_retries=3
                 )
-                self.models["gpt-3.5-turbo"] = ChatOpenAI(
-                    model="gpt-3.5-turbo",
+                self.models["gpt-4.1-nano"] = ChatOpenAI(
+                    model="gpt-4.1-nano",
                     temperature=0.1,
                     api_key=settings.ai.OPENAI_API_KEY,
                     max_retries=3
                 )
-                self.default_model = "gpt-4"
+                self.default_model = "gpt-4.1-mini"
                 logger.info("OpenAI models initialized")
             
             # Initialize Anthropic models if API key is available
@@ -381,13 +381,13 @@ class WorkflowOrchestrator:
         # Add nodes
         workflow.add_node("extract_claims", self._extract_claims_node)
         workflow.add_node("analyze_sources", self._analyze_sources_node)
-        workflow.add_node("fact_analysis", self._fact_analysis_node)
+        workflow.add_node("fact_analysis_node", self._fact_analysis_node)
         workflow.add_node("generate_verdict", self._generate_verdict_node)
         
         # Define edges
         workflow.add_edge("extract_claims", "analyze_sources")
-        workflow.add_edge("analyze_sources", "fact_analysis")
-        workflow.add_edge("fact_analysis", "generate_verdict")
+        workflow.add_edge("analyze_sources", "fact_analysis_node")
+        workflow.add_edge("fact_analysis_node", "generate_verdict")
         workflow.add_edge("generate_verdict", END)
         
         return workflow.compile()

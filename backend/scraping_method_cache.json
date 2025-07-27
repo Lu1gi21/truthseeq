@@ -1,0 +1,33 @@
+{
+  "httpbin.org": {
+    "successful_method": "requests",
+    "last_success": 1753568221.83813,
+    "success_count": 2
+  },
+  "www.wsj.com": {
+    "failed_methods": {
+      "requests": {
+        "last_failure": 1753584531.2053425,
+        "failure_count": 4
+      },
+      "selenium": {
+        "last_failure": 1753584542.2699282,
+        "failure_count": 4
+      },
+      "undetected_selenium": {
+        "last_failure": 1753584565.2319567,
+        "failure_count": 24
+      }
+    }
+  },
+  "example.com": {
+    "successful_method": "requests",
+    "last_success": 1753585394.3542247,
+    "success_count": 13
+  },
+  "www.ajc.org": {
+    "successful_method": "requests",
+    "last_success": 1753585448.626335,
+    "success_count": 12
+  }
+}

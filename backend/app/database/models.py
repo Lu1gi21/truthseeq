@@ -270,7 +270,7 @@ class ContentItem(Base):
     )
     
     # Relationships
-    metadata: Mapped[List["ContentMetadata"]] = relationship(
+    content_metadata: Mapped[List["ContentMetadata"]] = relationship(
         "ContentMetadata",
         back_populates="content_item",
         cascade="all, delete-orphan"
@@ -340,7 +340,7 @@ class ContentMetadata(Base):
     # Relationships
     content_item: Mapped["ContentItem"] = relationship(
         "ContentItem",
-        back_populates="metadata"
+        back_populates="content_metadata"
     )
     
     # Database optimizations

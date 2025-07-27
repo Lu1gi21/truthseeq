@@ -381,7 +381,7 @@ class FactCheckRequest(BaseModel):
     """Schema for fact-checking requests."""
     
     content_id: int = Field(..., description="Content ID to fact-check")
-    model_name: Optional[str] = Field(
+    ai_model_name: Optional[str] = Field(
         None, 
         description="AI model to use for analysis"
     )
@@ -446,7 +446,7 @@ class BatchVerificationRequest(BaseModel):
         max_items=50,
         description="Content IDs to verify (max 50)"
     )
-    model_name: Optional[str] = Field(
+    ai_model_name: Optional[str] = Field(
         None, 
         description="AI model to use for analysis"
     )
@@ -526,7 +526,7 @@ class ContentAnalysisRequest(BaseModel):
         default_factory=lambda: ["sentiment", "bias", "credibility"],
         description="Types of analysis to perform"
     )
-    model_name: Optional[str] = Field(
+    ai_model_name: Optional[str] = Field(
         None, 
         description="AI model to use for analysis"
     )
@@ -563,7 +563,7 @@ class AIAnalysisRequest(BaseModel):
         None, 
         description="Analysis-specific parameters"
     )
-    model_name: Optional[str] = Field(
+    ai_model_name: Optional[str] = Field(
         None, 
         description="AI model to use"
     )

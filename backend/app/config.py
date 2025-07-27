@@ -29,7 +29,7 @@ class DatabaseSettings(BaseSettings):
     POSTGRES_SERVER: str = Field(default="localhost", description="PostgreSQL server host")
     POSTGRES_PORT: int = Field(default=5432, description="PostgreSQL server port")
     POSTGRES_USER: str = Field(default="truthseeq", description="PostgreSQL username")
-    POSTGRES_PASSWORD: str = Field(description="PostgreSQL password")
+    POSTGRES_PASSWORD: str = Field(default="dev_password", description="PostgreSQL password")
     POSTGRES_DB: str = Field(default="truthseeq", description="PostgreSQL database name")
     
     # SQLAlchemy configuration
@@ -113,7 +113,7 @@ class SecuritySettings(BaseSettings):
     """Security and authentication configuration."""
     
     # API Keys and secrets
-    SECRET_KEY: str = Field(description="Secret key for signing JWT tokens")
+    SECRET_KEY: str = Field(default="dev_secret_key_change_in_production", description="Secret key for signing JWT tokens")
     API_KEY_HEADER: str = Field(default="X-API-Key", description="API key header name")
     
     # JWT configuration
@@ -132,6 +132,13 @@ class SecuritySettings(BaseSettings):
 
 class AISettings(BaseSettings):
     """AI and LangChain configuration."""
+    
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore"
+    )
     
     # OpenAI configuration
     OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API key")
@@ -169,6 +176,18 @@ class ScrapingSettings(BaseSettings):
     # Content extraction
     CONTENT_MIN_LENGTH: int = Field(default=100, description="Minimum content length for processing")
     CONTENT_MAX_LENGTH: int = Field(default=50000, description="Maximum content length for processing")
+
+
+class BraveSearchSettings(BaseSettings):
+    """Brave Search API configuration."""
+    
+    BRAVE_SEARCH_API_KEY: Optional[str] = Field(default=None, description="Brave Search API key")
+    BRAVE_SEARCH_BASE_URL: str = Field(
+        default="https://api.search.brave.com/res/v1/web/search",
+        description="Brave Search API base URL"
+    )
+    BRAVE_SEARCH_TIMEOUT: int = Field(default=10, description="Brave Search API timeout in seconds")
+    BRAVE_SEARCH_MAX_RESULTS: int = Field(default=20, description="Maximum search results to return")
 
 
 class MonitoringSettings(BaseSettings):
@@ -232,6 +251,7 @@ class Settings(BaseSettings):
     security: SecuritySettings = Field(default_factory=SecuritySettings)
     ai: AISettings = Field(default_factory=AISettings)
     scraping: ScrapingSettings = Field(default_factory=ScrapingSettings)
+    brave_search: BraveSearchSettings = Field(default_factory=BraveSearchSettings)
     monitoring: MonitoringSettings = Field(default_factory=MonitoringSettings)
     
     @validator("ENVIRONMENT")
