@@ -57,7 +57,7 @@ class WorkflowOrchestrator:
         self, 
         db_session: AsyncSession, 
         redis_client: redis.Redis,
-        default_model: str = "gpt-4"
+        default_model: str = "gpt-4.1-mini-2025-04-14"
     ):
         """
         Initialize workflow orchestrator.
