@@ -34,7 +34,7 @@ OPENAI_API_KEY=your_openai_key
 ANTHROPIC_API_KEY=your_anthropic_key
 
 # Brave Search (optional)
-BRAVE_SEARCH_API_KEY=your_brave_search_key
+BRAVE_API_KEY=your_brave_search_key
 
 # Database
 DATABASE_URL=postgresql+asyncpg://user:password@localhost/truthseeq

@@ -142,7 +142,7 @@ class AISettings(BaseSettings):
     
     # OpenAI configuration
     OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API key")
-    OPENAI_MODEL: str = Field(default="gpt-4", description="Default OpenAI model")
+    OPENAI_MODEL: str = Field(default="gpt-4.1-mini-2025-04-14", description="Default OpenAI model")
     OPENAI_TEMPERATURE: float = Field(default=0.0, description="OpenAI temperature setting")
     OPENAI_MAX_TOKENS: int = Field(default=1000, description="Maximum tokens for OpenAI")
     
@@ -181,7 +181,9 @@ class ScrapingSettings(BaseSettings):
 class BraveSearchSettings(BaseSettings):
     """Brave Search API configuration."""
     
-    BRAVE_SEARCH_API_KEY: Optional[str] = Field(default=None, description="Brave Search API key")
+    BRAVE_API_KEY: Optional[str] = Field(default=None, description="Brave Search API key")
+    API_KEY: Optional[str] = Field(default=None, description="Brave Search API key (alias)")
+    BRAVE_SEARCH_API_KEY: Optional[str] = Field(default=None, description="Brave Search API key (legacy)")
     BRAVE_SEARCH_BASE_URL: str = Field(
         default="https://api.search.brave.com/res/v1/web/search",
         description="Brave Search API base URL"

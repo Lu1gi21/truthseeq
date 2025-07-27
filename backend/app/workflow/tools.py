@@ -8,7 +8,10 @@ that integrate with the advanced scraper and external APIs.
 import asyncio
 import json
 import logging
+import os
 import time
+import random
+import threading
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from urllib.parse import urlparse, quote_plus
@@ -23,6 +26,59 @@ from ..config import settings
 from ..advanced_scraper import AdvancedScraper, ScrapingResult
 
 logger = logging.getLogger(__name__)
+
+
+class GlobalBraveRateLimiter:
+    """
+    Global rate limiter for Brave Search API to ensure we don't exceed 1 request per second
+    across all instances of BraveSearchTool.
+    
+    This is a thread-safe singleton that coordinates rate limiting across multiple
+    workflow instances and concurrent requests.
+    """
+    
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+    
+    def __init__(self):
+        if self._initialized:
+            return
+        
+        self.last_request_time = 0
+        self.min_interval = 1.1  # Slightly more than 1 second to be safe
+        self._lock = threading.Lock()
+        self._initialized = True
+        logger.info("Global Brave Search rate limiter initialized")
+    
+    def wait_if_needed(self):
+        """
+        Wait if necessary to respect the rate limit.
+        
+        This method ensures that at least 1.1 seconds pass between any
+        Brave Search API requests across all instances.
+        """
+        with self._lock:
+            current_time = time.time()
+            time_since_last = current_time - self.last_request_time
+            
+            if time_since_last < self.min_interval:
+                sleep_time = self.min_interval - time_since_last
+                # Add small jitter to prevent thundering herd
+                jitter = random.uniform(0.05, 0.15)
+                sleep_time += jitter
+                
+                logger.debug(f"Global rate limiting: waiting {sleep_time:.2f}s")
+                time.sleep(sleep_time)
+            
+            self.last_request_time = time.time()
 
 
 class WebSearchResult(BaseModel):
@@ -48,21 +104,83 @@ class BraveSearchTool:
         Args:
             api_key: Brave Search API key (optional, will use config if not provided)
         """
-        self.api_key = api_key or settings.brave_search.API_KEY
+        # Try multiple possible API key sources with better debugging
+        self.api_key = api_key or self._get_api_key_from_config()
         self.base_url = "https://api.search.brave.com/res/v1/web/search"
         self.session = requests.Session()
+        
+        # Get global rate limiter instance
+        self.global_limiter = GlobalBraveRateLimiter()
+        
+        # Instance-specific rate limiting configuration
+        self.consecutive_errors = 0
+        self.max_retries = 3
+        self.base_backoff = 2.0
         
         if self.api_key:
             self.session.headers.update({
                 "Accept": "application/json",
                 "X-Subscription-Token": self.api_key
             })
+            logger.info("Brave Search API key configured successfully")
+        else:
+            logger.warning("Brave Search API key not configured - using fallback search")
+            logger.info("To enable Brave Search, set one of these environment variables:")
+            logger.info("  - BRAVE_API_KEY")
+            logger.info("  - BRAVE_SEARCH_API_KEY") 
+            logger.info("  - API_KEY")
+            logger.info("Register at https://api.search.brave.com/register to get an API key")
+    
+    def _get_api_key_from_config(self) -> Optional[str]:
+        """
+        Get API key from configuration with detailed logging.
+        
+        Returns:
+            API key if found, None otherwise
+        """
+        # Check all possible sources
+        sources = [
+            ("settings.brave_search.BRAVE_API_KEY", settings.brave_search.BRAVE_API_KEY),
+            ("settings.brave_search.API_KEY", settings.brave_search.API_KEY),
+            ("settings.brave_search.BRAVE_SEARCH_API_KEY", settings.brave_search.BRAVE_SEARCH_API_KEY),
+            ("os.getenv('BRAVE_API_KEY')", os.getenv("BRAVE_API_KEY")),
+            ("os.getenv('BRAVE_SEARCH_API_KEY')", os.getenv("BRAVE_SEARCH_API_KEY")),
+            ("os.getenv('API_KEY')", os.getenv("API_KEY"))
+        ]
+        
+        for source_name, value in sources:
+            if value:
+                logger.debug(f"Found API key from {source_name}")
+                return value
+        
+        logger.debug("No API key found in any configuration source")
+        return None
+    
+    def _enforce_rate_limit(self):
+        """
+        Enforce rate limiting using the global rate limiter.
+        
+        This ensures we don't exceed the 1 request per second limit
+        across all instances and implements exponential backoff for errors.
+        """
+        # Use global rate limiter to ensure 1 request per second across all instances
+        self.global_limiter.wait_if_needed()
+        
+        # Add additional backoff if we've had consecutive errors
+        if self.consecutive_errors > 0:
+            backoff_multiplier = self.base_backoff ** min(self.consecutive_errors, 3)
+            additional_wait = backoff_multiplier - 1.0  # Subtract 1 since we already waited 1.1s
+            if additional_wait > 0:
+                jitter = random.uniform(0.1, 0.3)
+                additional_wait += jitter
+                logger.debug(f"Rate limiting with backoff: additional {additional_wait:.2f}s (errors: {self.consecutive_errors})")
+                time.sleep(additional_wait)
     
     def search(
         self, 
         query: str, 
         count: int = 10, 
-        search_lang: str = "en_US",
+        search_lang: str = "en",
         country: str = "US"
     ) -> List[WebSearchResult]:
         """
@@ -71,7 +189,7 @@ class BraveSearchTool:
         Args:
             query: Search query string
             count: Number of results to return (max 20)
-            search_lang: Search language
+            search_lang: Search language (use "en" for English)
             country: Country for search results
             
         Returns:
@@ -81,35 +199,83 @@ class BraveSearchTool:
             logger.warning("Brave Search API key not configured, using fallback search")
             return self._fallback_search(query, count)
         
-        try:
-            params = {
-                "q": query,
-                "count": min(count, 20),  # Brave API limit
-                "search_lang": search_lang,
-                "country": country,
-                "safesearch": "moderate"
-            }
-            
-            response = self.session.get(self.base_url, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            results = []
-            
-            for result in data.get("web", {}).get("results", []):
-                results.append(WebSearchResult(
-                    title=result.get("title", ""),
-                    url=result.get("url", ""),
-                    snippet=result.get("description", ""),
-                    relevance_score=0.8  # Default relevance score
-                ))
-            
-            logger.info(f"Brave Search returned {len(results)} results for query: {query}")
-            return results
-            
-        except Exception as e:
-            logger.error(f"Brave Search failed: {e}")
-            return self._fallback_search(query, count)
+        for attempt in range(self.max_retries + 1):
+            try:
+                # Enforce rate limiting
+                self._enforce_rate_limit()
+                
+                params = {
+                    "q": query,
+                    "count": min(count, 20),  # Brave API limit
+                    "search_lang": search_lang,
+                    "country": country,
+                    "safesearch": "moderate"
+                }
+                
+                response = self.session.get(self.base_url, params=params, timeout=10)
+                
+                # Reset consecutive errors on success
+                self.consecutive_errors = 0
+                
+                response.raise_for_status()
+                
+                data = response.json()
+                results = []
+                
+                for result in data.get("web", {}).get("results", []):
+                    results.append(WebSearchResult(
+                        title=result.get("title", ""),
+                        url=result.get("url", ""),
+                        snippet=result.get("description", ""),
+                        relevance_score=0.8  # Default relevance score
+                    ))
+                
+                logger.info(f"Brave Search returned {len(results)} results for query: {query}")
+                return results
+                
+            except requests.exceptions.HTTPError as e:
+                self.consecutive_errors += 1
+                
+                if e.response.status_code == 429:
+                    logger.warning(f"Rate limit exceeded (attempt {attempt + 1}/{self.max_retries + 1})")
+                    if attempt < self.max_retries:
+                        # Wait longer for rate limit errors
+                        wait_time = self.base_backoff ** attempt + random.uniform(1, 3)
+                        logger.info(f"Waiting {wait_time:.2f}s before retry...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error("Max retries reached for rate limit, using fallback")
+                        return self._fallback_search(query, count)
+                        
+                elif e.response.status_code == 401:
+                    logger.error("Authentication failed - check your Brave Search API key")
+                    logger.error("Make sure your API key is valid and properly configured")
+                    return self._fallback_search(query, count)
+                elif e.response.status_code == 403:
+                    logger.error("Access forbidden - check your API key permissions")
+                    return self._fallback_search(query, count)
+                else:
+                    logger.error(f"Brave Search API HTTP error: {e.response.status_code} - {e.response.text}")
+                    if attempt < self.max_retries:
+                        continue
+                    return self._fallback_search(query, count)
+                    
+            except requests.exceptions.RequestException as e:
+                self.consecutive_errors += 1
+                logger.error(f"Brave Search API request error: {e}")
+                if attempt < self.max_retries:
+                    continue
+                return self._fallback_search(query, count)
+            except Exception as e:
+                self.consecutive_errors += 1
+                logger.error(f"Brave Search API unexpected error: {e}")
+                if attempt < self.max_retries:
+                    continue
+                return self._fallback_search(query, count)
+        
+        # If we get here, all retries failed
+        return self._fallback_search(query, count)
     
     def _fallback_search(self, query: str, count: int) -> List[WebSearchResult]:
         """
@@ -140,11 +306,11 @@ class BraveSearchTool:
                     relevance_score=0.9
                 ))
             
-            # Add related topics
+            # Add related topics if available
             for topic in data.get("RelatedTopics", [])[:count-1]:
                 if isinstance(topic, dict) and topic.get("Text"):
                     results.append(WebSearchResult(
-                        title="Related Topic",
+                        title=topic.get("Text", ""),
                         url=topic.get("FirstURL", ""),
                         snippet=topic.get("Text", ""),
                         relevance_score=0.7
@@ -392,17 +558,48 @@ class FactCheckingDatabaseTool:
         Returns:
             List of fact-check results
         """
-        # This would integrate with fact-checking database APIs
-        # For now, return a placeholder structure
-        return [
-            {
-                "source": "snopes",
-                "title": "Sample fact check",
-                "url": "https://www.snopes.com/fact-check/",
-                "verdict": "false",
-                "relevance_score": 0.7
-            }
-        ]
+        try:
+            # Use Brave Search to find fact-checking sources
+            search_tool = BraveSearchTool()
+            
+            # Search for fact-checking databases and sites
+            fact_check_query = f'"{query}" site:snopes.com OR site:factcheck.org OR site:reuters.com/fact-check OR site:apnews.com/fact-check'
+            search_results = search_tool.search(fact_check_query, count=5)
+            
+            fact_check_results = []
+            for result in search_results:
+                fact_check_results.append({
+                    "source": self._extract_source_domain(result.url),
+                    "title": result.title,
+                    "url": result.url,
+                    "snippet": result.snippet,
+                    "verdict": "unverified",  # Would need AI analysis to determine
+                    "relevance_score": result.relevance_score
+                })
+            
+            return fact_check_results
+            
+        except Exception as e:
+            logger.error(f"Error searching fact-checking databases: {e}")
+            # Return placeholder if search fails
+            return [
+                {
+                    "source": "snopes",
+                    "title": "Sample fact check",
+                    "url": "https://www.snopes.com/fact-check/",
+                    "verdict": "unverified",
+                    "relevance_score": 0.7
+                }
+            ]
+    
+    def _extract_source_domain(self, url: str) -> str:
+        """Extract domain name from URL for source identification."""
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            return parsed.netloc
+        except:
+            return "unknown"
 
 
 # LangChain tool definitions

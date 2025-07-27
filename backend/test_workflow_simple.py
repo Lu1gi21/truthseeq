@@ -67,7 +67,7 @@ async def test_tools():
         
         # Test web search (will use fallback if no API key)
         print("\n2. Testing Web Search:")
-        search_results = web_search("fact check climate change", count=3)
+        search_results = web_search.invoke({"query": "fact check climate change", "count": 3})
         print(f"   Found {len(search_results)} results")
         for i, result in enumerate(search_results[:2], 1):
             print(f"   {i}. {result['title']}")
@@ -78,7 +78,7 @@ async def test_tools():
         print("\n3. Testing Content Scraping:")
         # Use a simple test URL
         test_url = "https://httpbin.org/html"
-        scrape_result = scrape_content(test_url)
+        scrape_result = scrape_content.invoke({"url": test_url})
         print(f"   URL: {test_url}")
         print(f"   Success: {scrape_result['success']}")
         print(f"   Method: {scrape_result['method_used']}")

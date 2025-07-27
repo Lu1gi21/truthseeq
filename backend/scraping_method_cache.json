@@ -1,8 +1,8 @@
 {
   "httpbin.org": {
     "successful_method": "requests",
-    "last_success": 1753568221.83813,
-    "success_count": 2
+    "last_success": 1753589584.2894852,
+    "success_count": 3
   },
   "www.wsj.com": {
     "failed_methods": {
@@ -29,5 +29,46 @@
     "successful_method": "requests",
     "last_success": 1753585448.626335,
     "success_count": 12
+  },
+  "www.britannica.com": {
+    "successful_method": "requests",
+    "last_success": 1753586074.2615316,
+    "success_count": 12
+  },
+  "encyclopedia.ushmm.org": {
+    "successful_method": "requests",
+    "last_success": 1753586615.3676522,
+    "success_count": 2
+  },
+  "people.com": {
+    "successful_method": "requests",
+    "last_success": 1753592836.9502656,
+    "success_count": 33
+  },
+  "apnews.com": {
+    "failed_methods": {
+      "requests": {
+        "last_failure": 1753591932.5317512,
+        "failure_count": 1
+      }
+    },
+    "successful_method": "selenium",
+    "last_success": 1753591959.4586716,
+    "success_count": 1
+  },
+  "www.thecut.com": {
+    "successful_method": "requests",
+    "last_success": 1753591933.460758,
+    "success_count": 1
+  },
+  "www.celebitchy.com": {
+    "successful_method": "requests",
+    "last_success": 1753591961.0500505,
+    "success_count": 1
+  },
+  "www.neowin.net": {
+    "successful_method": "requests",
+    "last_success": 1753591961.570387,
+    "success_count": 1
   }
 }

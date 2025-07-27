@@ -76,9 +76,10 @@ async def get_rate_limiter(
         user_agent = request.headers.get("user-agent", "unknown")
         
         # Create rate limiter with client identifier
+        # Use only IP address for rate limiting to avoid database field length issues
         rate_limiter = RateLimiter(
             db=db,
-            client_id=f"{client_ip}:{user_agent}"
+            client_id=client_ip
         )
         
         return rate_limiter

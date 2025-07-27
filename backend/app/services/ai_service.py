@@ -78,8 +78,8 @@ class ModelManager:
         try:
             # Initialize OpenAI models if API key is available
             if settings.ai.OPENAI_API_KEY:
-                self.models["gpt-4.1mini"] = ChatOpenAI(
-                    model="gpt-4.1-mini",
+                self.models["gpt-4.1-mini-2025-04-14"] = ChatOpenAI(
+                    model="gpt-4.1-mini-2025-04-14",
                     temperature=0.1,
                     api_key=settings.ai.OPENAI_API_KEY,
                     max_retries=3
@@ -90,7 +90,7 @@ class ModelManager:
                     api_key=settings.ai.OPENAI_API_KEY,
                     max_retries=3
                 )
-                self.default_model = "gpt-4.1-mini"
+                self.default_model = "gpt-4.1-mini-2025-04-14"
                 logger.info("OpenAI models initialized")
             
             # Initialize Anthropic models if API key is available

@@ -21,6 +21,7 @@ Classes:
 import asyncio
 import hashlib
 import logging
+import os
 import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Set, Tuple, Union
@@ -68,9 +69,18 @@ class BraveSearchClient:
         Args:
             api_key: Brave Search API key (defaults to environment variable)
         """
-        self.api_key = api_key or os.getenv("BRAVE_API_KEY")
+        # Try multiple possible API key sources with better debugging
+        self.api_key = api_key or self._get_api_key_from_config()
+        
         if not self.api_key:
             logger.warning("Brave Search API key not provided - search functionality will be limited")
+            logger.info("To enable Brave Search, set one of these environment variables:")
+            logger.info("  - BRAVE_API_KEY")
+            logger.info("  - BRAVE_SEARCH_API_KEY") 
+            logger.info("  - API_KEY")
+            logger.info("Register at https://api.search.brave.com/register to get an API key")
+        else:
+            logger.info("Brave Search API key configured successfully")
         
         self.base_url = "https://api.search.brave.com/res/v1"
         self.client = httpx.AsyncClient(
@@ -81,6 +91,31 @@ class BraveSearchClient:
                 "X-Subscription-Token": self.api_key or ""
             }
         )
+    
+    def _get_api_key_from_config(self) -> Optional[str]:
+        """
+        Get API key from configuration with detailed logging.
+        
+        Returns:
+            API key if found, None otherwise
+        """
+        # Check all possible sources
+        sources = [
+            ("settings.brave_search.BRAVE_API_KEY", settings.brave_search.BRAVE_API_KEY),
+            ("settings.brave_search.API_KEY", settings.brave_search.API_KEY),
+            ("settings.brave_search.BRAVE_SEARCH_API_KEY", settings.brave_search.BRAVE_SEARCH_API_KEY),
+            ("os.getenv('BRAVE_API_KEY')", os.getenv("BRAVE_API_KEY")),
+            ("os.getenv('BRAVE_SEARCH_API_KEY')", os.getenv("BRAVE_SEARCH_API_KEY")),
+            ("os.getenv('API_KEY')", os.getenv("API_KEY"))
+        ]
+        
+        for source_name, value in sources:
+            if value:
+                logger.debug(f"Found API key from {source_name}")
+                return value
+        
+        logger.debug("No API key found in any configuration source")
+        return None
     
     async def search_web(
         self, 
@@ -167,8 +202,33 @@ class BraveSearchClient:
                 suggestions=data.get("query", {}).get("altered", "").split() if data.get("query", {}).get("altered") else []
             )
             
-        except httpx.HTTPError as e:
-            logger.error(f"Brave Search API error: {e}")
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Brave Search API HTTP error: {e.response.status_code} - {e.response.text}")
+            if e.response.status_code == 401:
+                logger.error("Authentication failed - check your Brave Search API key")
+                logger.error("Make sure your API key is valid and properly configured")
+            elif e.response.status_code == 403:
+                logger.error("Access forbidden - check your API key permissions")
+            elif e.response.status_code == 429:
+                logger.error("Rate limit exceeded - too many requests")
+            return SearchResponse(
+                query=query,
+                total_results=0,
+                results=[],
+                search_time=time.time() - start_time,
+                suggestions=[]
+            )
+        except httpx.RequestError as e:
+            logger.error(f"Brave Search API request error: {e}")
+            return SearchResponse(
+                query=query,
+                total_results=0,
+                results=[],
+                search_time=time.time() - start_time,
+                suggestions=[]
+            )
+        except Exception as e:
+            logger.error(f"Brave Search API unexpected error: {e}")
             return SearchResponse(
                 query=query,
                 total_results=0,

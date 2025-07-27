@@ -123,8 +123,8 @@ async def run_async_migrations() -> None:
     In this scenario we need to create an Engine
     and associate a connection with the context.
     """
-    # Get the database URL
-    database_url = settings.database.get_sync_database_url()
+    # Get the database URL - use async URL for async engine
+    database_url = settings.database.get_database_url()
     
     # Create configuration for the engine
     configuration = config.get_section(config.config_ini_section, {})

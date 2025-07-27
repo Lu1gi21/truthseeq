@@ -51,7 +51,7 @@ class FactCheckingWorkflow:
         Args:
             ai_model_name: AI model to use for analysis
         """
-        self.ai_model_name = ai_model_name or "gpt-4"
+        self.ai_model_name = ai_model_name or "gpt-4.1-mini-2025-04-14"
         self.graph = self._create_workflow_graph()
         
     def _create_workflow_graph(self) -> StateGraph:
@@ -274,7 +274,7 @@ class ContentAnalysisWorkflow:
         Args:
             ai_model_name: AI model to use for analysis
         """
-        self.ai_model_name = ai_model_name or "gpt-4"
+        self.ai_model_name = ai_model_name or "gpt-4.1-mini-2025-04-14"
         self.graph = self._create_workflow_graph()
     
     def _create_workflow_graph(self) -> StateGraph:
@@ -389,7 +389,7 @@ class SourceVerificationWorkflow:
         Args:
             ai_model_name: AI model to use for analysis
         """
-        self.ai_model_name = ai_model_name or "gpt-4"
+        self.ai_model_name = ai_model_name or "gpt-4.1-mini-2025-04-14"
         self.graph = self._create_workflow_graph()
     
     def _create_workflow_graph(self) -> StateGraph:
@@ -490,7 +490,7 @@ class WorkflowManager:
     of workflows and managing their lifecycle.
     """
     
-    def __init__(self, default_model: str = "gpt-4"):
+    def __init__(self, default_model: str = "gpt-4.1-mini-2025-04-14"):
         """
         Initialize workflow manager.
         

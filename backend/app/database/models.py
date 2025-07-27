@@ -109,7 +109,7 @@ class UserSession(Base):
     
     # Client information for identification and rate limiting
     ip_address: Mapped[str] = mapped_column(
-        String(45),  # IPv6 addresses can be up to 45 characters
+        String(255),  # Increased to accommodate IP + user agent combinations
         index=True,
         doc="Client IP address for rate limiting and analytics"
     )
