@@ -204,3 +204,5 @@ coverage
 
 # TypeScript cache
 *.tsbuildinfo
+
+venv/
